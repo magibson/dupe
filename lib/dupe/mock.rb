@@ -1,6 +1,10 @@
 class Dupe
   class Network #:nodoc:
     class Mock #:nodoc:
+
+      # this should come from param/config or something
+      DO_XML = false
+
       class ResourceNotFoundError < StandardError; end
       
       attr_reader :url_pattern
@@ -49,13 +53,26 @@ class Dupe
             raise ResourceNotFoundError, "Failed with 404: the request '#{url}' returned nil." 
             
           when Dupe::Database::Record
-            resp = resp.to_xml_safe(:root => resp.__model__.name.to_s)
+            # MG changed to allow json, DO_XML should come from param/config
+            if (DO_XML)
+              resp = resp.to_xml_safe(:root => resp.__model__.name.to_s)
+            else
+              resp = resp.to_json(:root => resp.__model__.name.to_s)
+            end
 
           when Array
             if resp.empty?
-              resp = [].to_xml :root => 'results'
+              if (DO_XML)
+                resp = [].to_xml :root => 'results'
+              else
+                resp = [].to_json :root => 'results'
+              end
             else
-              resp = resp.map {|r| HashPruner.prune(r)}.to_xml(:root => resp.first.__model__.name.to_s.pluralize)
+              if (DO_XML)
+                resp = resp.map {|r| HashPruner.prune(r)}.to_xml(:root => resp.first.__model__.name.to_s.pluralize)
+              else
+                resp = resp.map {|r| HashPruner.prune(r)}.to_json(:root => resp.first.__model__.name.to_s.pluralize)
+              end
             end
         end
         Dupe.network.log.add_request :get, url, resp
