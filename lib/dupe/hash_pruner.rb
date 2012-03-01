@@ -34,4 +34,11 @@ class Hash
   def to_xml_safe(options={})
     HashPruner.prune(self).to_xml(options)  
   end
+  def to_format_safe(options={})
+    if (options[:xml])
+      HashPruner.prune(self).to_xml(options)
+    else
+      HashPruner.prune(self).to_json(options)
+    end
+  end
 end

@@ -54,11 +54,7 @@ class Dupe
             
           when Dupe::Database::Record
             # MG changed to allow json, DO_XML should come from param/config
-            if (DO_XML)
-              resp = resp.to_xml_safe(:root => resp.__model__.name.to_s)
-            else
-              resp = resp.to_json(:root => resp.__model__.name.to_s)
-            end
+            resp = resp.to_format_safe(:xml => DO_XML, :root => resp.__model__.name.to_s)
 
           when Array
             if resp.empty?
@@ -94,8 +90,8 @@ class Dupe
             raise StandardError, "Failed with 500: the request '#{url}' returned nil." 
           
           when Dupe::Database::Record
-            new_path = "/#{resp.__model__.name.to_s.pluralize}/#{resp.id}.xml"
-            resp = resp.to_xml_safe(:root => resp.__model__.name.to_s)
+            new_path = "/#{resp.__model__.name.to_s.pluralize}/#{resp.id}." + (DO_XML ? "xml" : "json")
+            resp = resp.to_format_safe(:xml => DO_XML, :root => resp.__model__.name.to_s)
             Dupe.network.log.add_request :post, url, resp
             return resp, new_path
           
