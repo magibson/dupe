@@ -34,7 +34,7 @@ module ActiveResource #:nodoc:
       # if the request threw an exception
       rescue
         unless body.blank?
-          resource_hash = ::DO_XML ? Hash.from_xml(body) : JSON.parse(body)
+          resource_hash = format_to_hash(body)
           resource_hash = resource_hash[resource_hash.keys.first]
         end
         resource_hash = {} unless resource_hash.kind_of?(Hash)
@@ -42,12 +42,13 @@ module ActiveResource #:nodoc:
           mocked_response, new_path = Dupe.network.request(:post, path, resource_hash)
           error = false
         rescue Dupe::UnprocessableEntity => e
-          mocked_response = {:error => e.message.to_s}.to_xml(:root => 'errors')
+          #mocked_response = {:error => e.message.to_s}.to_xml(:root => 'errors')
+          mocked_response = hash_to_format({:error => e.message.to_s}, {:root => 'errors'})
           error = true
         end
         ActiveResource::HttpMock.respond_to do |mock|
           if error
-            mock.post(path, {}, mocked_response, 422, "Content-Type" => 'application/xml')
+            mock.post(path, {}, mocked_response, 422, "Content-Type" => content_type)
           else
             mock.post(path, {}, mocked_response, 201, "Location" => new_path)
           end
@@ -58,6 +59,20 @@ module ActiveResource #:nodoc:
       response
     end
 
+    def format_to_hash(format)
+      return hash.from_xml(format) if ::DO_XML
+      JSON.parse(format)
+    end
+
+    def hash_to_format(hash, options)
+      return hash.to_xml(options) if ::DO_XML
+      hash.to_json(options)
+    end
+
+    def content_type
+      'application/' + (::DO_XML ? 'xml' : 'json')
+    end
+
     def put(path, body = '', headers = {}) #:nodoc:
       begin
         response = request(:put, path, body.to_s, build_request_headers(headers, :put, self.site.merge(path)))
@@ -65,7 +80,8 @@ module ActiveResource #:nodoc:
       # if the request threw an exception
       rescue
         unless body.blank?
-          resource_hash = Hash.from_xml(body)
+          #resource_hash = Hash.from_xml(body)
+          resource_hash = format_to_hash(body)
           resource_hash = resource_hash[resource_hash.keys.first]
         end
         resource_hash = {} unless resource_hash.kind_of?(Hash)
@@ -75,12 +91,13 @@ module ActiveResource #:nodoc:
           error = false
           mocked_response, path = Dupe.network.request(:put, path, resource_hash)
         rescue Dupe::UnprocessableEntity => e
-          mocked_response = {:error => e.message.to_s}.to_xml(:root => 'errors')
+          #mocked_response = {:error => e.message.to_s}.to_xml(:root => 'errors')
+          mocked_response = hash_to_format({:error => e.message.to_s},{:root => 'errors'})
           error = true
         end
         ActiveResource::HttpMock.respond_to do |mock|
           if error
-            mock.put(path, {}, mocked_response, 422, "Content-Type" => 'application/xml')
+            mock.put(path, {}, mocked_response, 422, "Content-Type" => content_type)
           else
             mock.put(path, {}, mocked_response, 204)
           end
