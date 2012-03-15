@@ -1,9 +1,8 @@
 class Dupe
+  # this should come from param/config or something and defined elsewhere?
+  ::DO_XML = false
   class Network #:nodoc:
     class Mock #:nodoc:
-
-      # this should come from param/config or something
-      DO_XML = false
 
       class ResourceNotFoundError < StandardError; end
       

@@ -34,7 +34,7 @@ module ActiveResource #:nodoc:
       # if the request threw an exception
       rescue
         unless body.blank?
-          resource_hash = Hash.from_xml(body)
+          resource_hash = ::DO_XML ? Hash.from_xml(body) : JSON.parse(body)
           resource_hash = resource_hash[resource_hash.keys.first]
         end
         resource_hash = {} unless resource_hash.kind_of?(Hash)
